@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'tesseract' => [
+        'binary' => env('TESSERACT_BINARY', 'tesseract'),
+        'lang' => env('TESSERACT_LANG', 'eng'),
+    ],
+
 ];
