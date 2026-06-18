@@ -10,7 +10,7 @@
             </div>
             <div>
                 <p class="text-sm font-medium text-amber-400">{{ __('Vehicle Registration Available') }}</p>
-                <p class="mt-1 text-xs text-zinc-400">
+                <p class="mt-1 text-xs text-slate-400">
                     {{ __('Once logged in, you can register your vehicle plate number and owner details through the Vehicles section.') }}
                 </p>
             </div>

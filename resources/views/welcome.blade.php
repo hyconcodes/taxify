@@ -112,18 +112,80 @@
                     </div>
                 </div>
 
-                <div class="mt-12 grid w-full max-w-4xl grid-cols-3 gap-6">
-                    <div class="rounded-xl border border-slate-700/50 bg-slate-800/30 p-6 text-center backdrop-blur-sm">
-                        <p class="text-3xl font-bold text-amber-400">{{ $stats['vehicles'] ?? 0 }}</p>
-                        <p class="mt-1 text-sm text-slate-500">{{ __('Registered Vehicles') }}</p>
+                <div class="mt-16 w-full max-w-5xl">
+                    <div class="mb-10 text-center">
+                        <span class="inline-block rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-1.5 text-xs font-medium tracking-wider text-amber-400 uppercase">
+                            {{ __('System Workflow') }}
+                        </span>
+                        <h2 class="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
+                            {{ __('How Taxify') }}
+                            <span class="bg-gradient-to-r from-amber-400 to-amber-300 bg-clip-text text-transparent">{{ __('Works') }}</span>
+                        </h2>
                     </div>
-                    <div class="rounded-xl border border-slate-700/50 bg-slate-800/30 p-6 text-center backdrop-blur-sm">
-                        <p class="text-3xl font-bold text-amber-400">{{ $stats['captures'] ?? 0 }}</p>
-                        <p class="mt-1 text-sm text-slate-500">{{ __('Plate Captures') }}</p>
+
+                    <div class="relative grid gap-8 lg:grid-cols-3">
+                        <div class="relative flex flex-col items-center text-center">
+                            <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-500/5 ring-1 ring-amber-500/30">
+                                <svg class="h-8 w-8 text-amber-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                </svg>
+                            </div>
+                            <span class="mt-2 flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-primary-950">1</span>
+                            <h3 class="mt-3 text-lg font-semibold">{{ __('Register Vehicles') }}</h3>
+                            <p class="mt-2 text-sm text-slate-400 leading-relaxed">
+                                {{ __('Store plate numbers, vehicle specs, and owner profiles in a secure centralized database for instant access.') }}
+                            </p>
+                        </div>
+
+                        <div class="relative flex flex-col items-center text-center">
+                            <div class="absolute top-8 left-0 right-0 hidden lg:block">
+                                <div class="mx-auto h-px w-3/4 bg-gradient-to-r from-transparent via-amber-500/40 to-transparent"></div>
+                            </div>
+                            <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-500/5 ring-1 ring-amber-500/30">
+                                <svg class="h-8 w-8 text-amber-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Zm16.5-12.75a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0Z" />
+                                </svg>
+                            </div>
+                            <span class="mt-2 flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-primary-950">2</span>
+                            <h3 class="mt-3 text-lg font-semibold">{{ __('Capture & Recognize') }}</h3>
+                            <p class="mt-2 text-sm text-slate-400 leading-relaxed">
+                                {{ __('Use camera or image upload with OCR technology to automatically read and recognize license plates in real time.') }}
+                            </p>
+                        </div>
+
+                        <div class="relative flex flex-col items-center text-center">
+                            <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-500/5 ring-1 ring-amber-500/30">
+                                <svg class="h-8 w-8 text-amber-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                                </svg>
+                            </div>
+                            <span class="mt-2 flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-primary-950">3</span>
+                            <h3 class="mt-3 text-lg font-semibold">{{ __('Match & Alert') }}</h3>
+                            <p class="mt-2 text-sm text-slate-400 leading-relaxed">
+                                {{ __('Instantly cross-reference plates against registered vehicles and trigger alerts for unrecognized or suspicious plates.') }}
+                            </p>
+                        </div>
                     </div>
-                    <div class="rounded-xl border border-slate-700/50 bg-slate-800/30 p-6 text-center backdrop-blur-sm">
-                        <p class="text-3xl font-bold text-amber-400">{{ $stats['alerts'] ?? 0 }}</p>
-                        <p class="mt-1 text-sm text-slate-500">{{ __('Active Alerts') }}</p>
+
+                    <div class="mt-12 rounded-2xl border border-slate-700/50 bg-slate-800/30 p-8 backdrop-blur-sm">
+                        <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-amber-400">{{ __('100%') }}</div>
+                                <div class="mt-1 text-xs text-slate-500">{{ __('OCR Accuracy') }}</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-amber-400">{{ __('Real-time') }}</div>
+                                <div class="mt-1 text-xs text-slate-500">{{ __('Plate Matching') }}</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-amber-400">{{ __('24/7') }}</div>
+                                <div class="mt-1 text-xs text-slate-500">{{ __('Monitoring') }}</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-amber-400">{{ __('Secure') }}</div>
+                                <div class="mt-1 text-xs text-slate-500">{{ __('Data Encryption') }}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </main>

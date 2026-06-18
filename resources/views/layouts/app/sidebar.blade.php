@@ -3,9 +3,9 @@
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-white dark:bg-zinc-800">
-        <flux:sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:sidebar.header>
+    <body class="min-h-screen bg-white dark:bg-primary-900">
+        <flux:sidebar sticky collapsible="mobile" class="border-e border-primary-600/20 bg-primary-950 dark:border-primary-600/30 dark:bg-primary-950">
+            <flux:sidebar.header class="border-b border-amber-500/10 pb-4">
                 <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
                 <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
