@@ -38,4 +38,9 @@ class PlateCapture extends Model
     {
         return $this->hasMany(PlateAlert::class, 'plate_capture_id');
     }
+
+    public function vehicle(): BelongsTo
+    {
+        return $this->belongsTo(Vehicle::class, 'plate_number', 'plate_number');
+    }
 }

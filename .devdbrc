@@ -1,0 +1,6 @@
+[
+  {
+    "type": "sqlite",
+    "path": "c:\\Users\\Hycon\\Desktop\\LaravelDirect\\taxify\\database\\database.sqlite"
+  }
+]

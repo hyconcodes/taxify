@@ -16,12 +16,23 @@ new #[Title('Plate Captures')] class extends Component {
 
     public string $manual_plate = '';
 
+    public $selectedCapture = null;
+
+    public bool $showDetail = false;
+
     #[Computed]
     public function captures()
     {
-        return PlateCapture::with('capturer')
+        return PlateCapture::with(['capturer', 'vehicle.owner'])
             ->latest()
             ->get();
+    }
+
+    public function viewCapture(int $id): void
+    {
+        $this->selectedCapture = PlateCapture::with(['capturer', 'vehicle.owner'])
+            ->findOrFail($id);
+        $this->showDetail = true;
     }
 
     public function capture(): void
@@ -77,7 +88,7 @@ new #[Title('Plate Captures')] class extends Component {
     <flux:heading size="xl" class="mb-4">{{ __('Plate Captures') }}</flux:heading>
 
     <div class="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <flux:card class="space-y-4">
+        <flux:card id="ocr-capture-card" class="relative space-y-4">
             <flux:heading size="lg">{{ __('OCR Capture') }}</flux:heading>
             <flux:text class="mb-4">{{ __('Upload a license plate image for OCR recognition.') }}</flux:text>
 
@@ -87,6 +98,8 @@ new #[Title('Plate Captures')] class extends Component {
                     preview: null,
                     stream: null,
                     cameraActive: false,
+                    uploading: false,
+                    uploadProgress: 0,
 
                     handleDrop(e) {
                         e.preventDefault();
@@ -100,7 +113,13 @@ new #[Title('Plate Captures')] class extends Component {
 
                     setFile(file) {
                         if (!file.type.startsWith('image/')) return;
-                        $wire.upload('image', file);
+                        this.uploading = true;
+                        this.uploadProgress = 0;
+                        $wire.upload('image', file,
+                            (uploaded) => {},
+                            (uploaded, total) => { this.uploadProgress = Math.round((uploaded / total) * 100); },
+                            () => { this.uploading = false; },
+                        );
                         const reader = new FileReader();
                         reader.onload = (e) => { this.preview = e.target.result; };
                         reader.readAsDataURL(file);
@@ -148,9 +167,9 @@ new #[Title('Plate Captures')] class extends Component {
                         @dragleave.prevent="dragging = false"
                         :class="dragging ? 'border-amber-500 bg-amber-500/5' : 'border-neutral-600/50 dark:border-neutral-600/50'"
                         class="relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center transition"
-                        @click="$refs.fileInput.click()"
+                        @click="!uploading ? $refs.fileInput.click() : null"
                     >
-                        <template x-if="!preview">
+                        <template x-if="!preview && !uploading">
                             <div class="flex flex-col items-center gap-3">
                                 <div class="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-700/50">
                                     <svg class="h-7 w-7 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -167,7 +186,34 @@ new #[Title('Plate Captures')] class extends Component {
                             </div>
                         </template>
 
-                        <template x-if="preview">
+                        <template x-if="uploading && !preview">
+                            <div class="flex flex-col items-center gap-3">
+                                <div class="flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/20">
+                                    <svg class="h-7 w-7 animate-spin text-amber-400" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-neutral-300">{{ __('Uploading image...') }}</p>
+                                    <p class="mt-1 text-xs text-neutral-500" x-text="uploadProgress + '%'"></p>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template x-if="uploading && preview">
+                            <div class="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-neutral-900/60">
+                                <div class="flex flex-col items-center gap-2">
+                                    <svg class="h-8 w-8 animate-spin text-amber-400" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                    </svg>
+                                    <span class="text-xs text-neutral-300">{{ __('Uploading...') }}</span>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template x-if="preview && !uploading">
                             <div class="relative w-full">
                                 <img :src="preview" class="max-h-40 w-full rounded-lg object-contain" />
                                 <button @click.stop="preview = null; $wire.set('image', null)" type="button" class="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-neutral-900/80 text-neutral-400 transition hover:bg-red-500 hover:text-white">
@@ -179,6 +225,10 @@ new #[Title('Plate Captures')] class extends Component {
                         </template>
 
                         <input type="file" x-ref="fileInput" @change="handleFileInput" accept="image/*" class="hidden" />
+
+                        <div x-show="uploading" class="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-neutral-700">
+                            <div class="h-full rounded-full bg-amber-500 transition-all duration-300" :style="'width: ' + uploadProgress + '%'"></div>
+                        </div>
                     </div>
                 </template>
 
@@ -200,7 +250,7 @@ new #[Title('Plate Captures')] class extends Component {
                     </div>
                 </template>
 
-                <div x-show="!preview && !cameraActive" class="mt-3 flex justify-center" x-cloak>
+                <div x-show="!preview && !cameraActive && !uploading" class="mt-3 flex justify-center" x-cloak>
                     <button @click.stop="openCamera()" type="button" class="inline-flex items-center gap-2 rounded-lg border border-neutral-600/50 px-4 py-2 text-sm font-medium text-neutral-300 transition hover:bg-neutral-700/50">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
@@ -209,7 +259,7 @@ new #[Title('Plate Captures')] class extends Component {
                     </button>
                 </div>
 
-                <div x-show="preview && !cameraActive" class="mt-3 flex gap-3" x-cloak>
+                <div x-show="preview && !cameraActive && !uploading" class="mt-3 flex gap-3" x-cloak>
                     <button @click="openCamera()" type="button" class="inline-flex items-center gap-2 rounded-lg border border-neutral-600/50 px-4 py-2 text-sm font-medium text-neutral-300 transition hover:bg-neutral-700/50">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
@@ -224,16 +274,27 @@ new #[Title('Plate Captures')] class extends Component {
                 <flux:error>{{ $message }}</flux:error>
             @enderror
 
-            @if ($image)
-                <div class="mt-2">
-                    <img src="{{ $image->temporaryUrl() }}" class="max-h-40 rounded-lg border border-neutral-200 dark:border-neutral-700" />
-                </div>
-            @endif
-
             <div class="flex gap-3" x-cloak>
-                <flux:button variant="primary" wire:click="capture" wire:loading.attr="disabled">
-                    {{ __('Capture & Recognize') }}
+                <flux:button variant="primary" wire:click="capture" wire:loading.attr="disabled" wire:target="capture" class="relative">
+                    <span wire:loading.remove wire:target="capture">{{ __('Capture & Recognize') }}</span>
+                    <span wire:loading wire:target="capture" class="inline-flex items-center gap-2">
+                        <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        {{ __('Processing...') }}
+                    </span>
                 </flux:button>
+            </div>
+
+            <div wire:loading wire:target="capture" class="absolute inset-0 z-20 flex items-center justify-center rounded-xl bg-neutral-900/70">
+                <div class="flex flex-col items-center gap-3">
+                    <svg class="h-10 w-10 animate-spin text-amber-400" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <span class="text-sm font-medium text-neutral-200">{{ __('Running OCR recognition...') }}</span>
+                </div>
             </div>
         </flux:card>
 
@@ -248,8 +309,15 @@ new #[Title('Plate Captures')] class extends Component {
                     <flux:error name="manual_plate" />
                 </flux:field>
 
-                <flux:button variant="primary" type="submit" class="mt-4" wire:loading.attr="disabled">
-                    {{ __('Match Plate') }}
+                <flux:button variant="primary" type="submit" class="mt-4" wire:loading.attr="disabled" wire:target="manualCapture">
+                    <span wire:loading.remove wire:target="manualCapture">{{ __('Match Plate') }}</span>
+                    <span wire:loading wire:target="manualCapture" class="inline-flex items-center gap-2">
+                        <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        {{ __('Matching...') }}
+                    </span>
                 </flux:button>
             </form>
         </flux:card>
@@ -269,7 +337,10 @@ new #[Title('Plate Captures')] class extends Component {
 
             <flux:table.rows>
                 @forelse ($this->captures as $capture)
-                    <flux:table.row>
+                    <flux:table.row
+                        @click="if ($el.closest('table')?.querySelector('[data-selected]')) $el.closest('table').querySelector('[data-selected]').removeAttribute('data-selected'); $el.setAttribute('data-selected', ''); $wire.viewCapture({{ $capture->id }})"
+                        class="cursor-pointer transition hover:bg-neutral-50 dark:hover:bg-white/5"
+                    >
                         <flux:table.cell class="font-mono font-bold">{{ $capture->plate_number ?? '—' }}</flux:table.cell>
                         <flux:table.cell>{{ $capture->confidence }}%</flux:table.cell>
                         <flux:table.cell>
@@ -290,4 +361,117 @@ new #[Title('Plate Captures')] class extends Component {
             </flux:table.rows>
         </flux:table>
     </div>
+
+    <flux:modal wire:model="showDetail" class="w-full max-w-lg">
+        @if ($selectedCapture)
+            <div class="space-y-5">
+                <div class="flex items-center justify-between">
+                    <flux:heading size="lg">{{ __('Capture Detail') }}</flux:heading>
+                    <flux:badge :color="$selectedCapture->is_matched ? 'green' : 'red'" size="sm">
+                        {{ $selectedCapture->is_matched ? __('Matched') : __('Unmatched') }}
+                    </flux:badge>
+                </div>
+
+                <div class="rounded-lg bg-neutral-50 p-4 dark:bg-neutral-800/50">
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                            <span class="text-xs font-medium uppercase tracking-wider text-neutral-500">{{ __('Plate Number') }}</span>
+                            <p class="mt-0.5 font-mono text-base font-bold">{{ $selectedCapture->plate_number ?? '—' }}</p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-medium uppercase tracking-wider text-neutral-500">{{ __('Confidence') }}</span>
+                            <p class="mt-0.5 font-mono text-base font-bold">{{ $selectedCapture->confidence }}%</p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-medium uppercase tracking-wider text-neutral-500">{{ __('Captured By') }}</span>
+                            <p class="mt-0.5">{{ $selectedCapture->capturer?->name ?? '—' }}</p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-medium uppercase tracking-wider text-neutral-500">{{ __('Date') }}</span>
+                            <p class="mt-0.5">{{ $selectedCapture->captured_at->format('M d, Y H:i') }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                @if ($selectedCapture->is_matched && $selectedCapture->vehicle)
+                    <flux:heading size="md">{{ __('Vehicle Information') }}</flux:heading>
+
+                    <div class="rounded-lg bg-neutral-50 p-4 dark:bg-neutral-800/50">
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <span class="text-xs font-medium uppercase tracking-wider text-neutral-500">{{ __('Make') }}</span>
+                                <p class="mt-0.5 font-medium">{{ $selectedCapture->vehicle->make }}</p>
+                            </div>
+                            <div>
+                                <span class="text-xs font-medium uppercase tracking-wider text-neutral-500">{{ __('Model') }}</span>
+                                <p class="mt-0.5 font-medium">{{ $selectedCapture->vehicle->model }}</p>
+                            </div>
+                            <div>
+                                <span class="text-xs font-medium uppercase tracking-wider text-neutral-500">{{ __('Year') }}</span>
+                                <p class="mt-0.5 font-medium">{{ $selectedCapture->vehicle->year ?? '—' }}</p>
+                            </div>
+                            <div>
+                                <span class="text-xs font-medium uppercase tracking-wider text-neutral-500">{{ __('Color') }}</span>
+                                <p class="mt-0.5 font-medium">{{ $selectedCapture->vehicle->color ?? '—' }}</p>
+                            </div>
+                            <div>
+                                <span class="text-xs font-medium uppercase tracking-wider text-neutral-500">{{ __('Type') }}</span>
+                                <p class="mt-0.5 font-medium">{{ $selectedCapture->vehicle->type ?? '—' }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if ($selectedCapture->vehicle->owner)
+                        <flux:heading size="md">{{ __('Owner Information') }}</flux:heading>
+
+                        <div class="rounded-lg bg-neutral-50 p-4 dark:bg-neutral-800/50">
+                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                <div class="col-span-2">
+                                    <span class="text-xs font-medium uppercase tracking-wider text-neutral-500">{{ __('Name') }}</span>
+                                    <p class="mt-0.5 font-medium">{{ $selectedCapture->vehicle->owner->name }}</p>
+                                </div>
+                                <div>
+                                    <span class="text-xs font-medium uppercase tracking-wider text-neutral-500">{{ __('Phone') }}</span>
+                                    <p class="mt-0.5">{{ $selectedCapture->vehicle->owner->phone ?? '—' }}</p>
+                                </div>
+                                <div>
+                                    <span class="text-xs font-medium uppercase tracking-wider text-neutral-500">{{ __('Email') }}</span>
+                                    <p class="mt-0.5">{{ $selectedCapture->vehicle->owner->email ?? '—' }}</p>
+                                </div>
+                                <div class="col-span-2">
+                                    <span class="text-xs font-medium uppercase tracking-wider text-neutral-500">{{ __('Address') }}</span>
+                                    <p class="mt-0.5">{{ $selectedCapture->vehicle->owner->address ?? '—' }}</p>
+                                </div>
+                                <div>
+                                    <span class="text-xs font-medium uppercase tracking-wider text-neutral-500">{{ __('National ID') }}</span>
+                                    <p class="mt-0.5 font-mono">{{ $selectedCapture->vehicle->owner->national_id ?? '—' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                @elseif (!$selectedCapture->is_matched)
+                    <div class="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
+                        <div class="flex items-start gap-3">
+                            <svg class="mt-0.5 h-5 w-5 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                            </svg>
+                            <div>
+                                <p class="text-sm font-medium text-red-800 dark:text-red-200">{{ __('No Match Found') }}</p>
+                                <p class="mt-1 text-xs text-red-600 dark:text-red-300">{{ __('This plate does not match any registered vehicle. An alert has been generated.') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                <div class="flex justify-end gap-3 border-t border-neutral-200 pt-4 dark:border-neutral-700">
+                    <flux:modal.close>
+                        <flux:button variant="ghost">{{ __('Close') }}</flux:button>
+                    </flux:modal.close>
+                    <flux:button variant="primary" wire:click="$set('image', null)" x-on:click="$dispatch('close-modal', 'showDetail'); setTimeout(() => document.getElementById('ocr-capture-card')?.scrollIntoView({ behavior: 'smooth' }), 200)">
+                        {{ __('New Capture') }}
+                    </flux:button>
+                </div>
+            </div>
+        @endif
+    </flux:modal>
 </div>

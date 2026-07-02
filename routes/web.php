@@ -1,22 +1,9 @@
 <?php
 
-use App\Models\PlateAlert;
-use App\Models\PlateCapture;
-use App\Models\Vehicle;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    try {
-        $stats = [
-            'vehicles' => Vehicle::count(),
-            'captures' => PlateCapture::count(),
-            'alerts' => PlateAlert::where('status', 'alert')->count(),
-        ];
-    } catch (Throwable) {
-        $stats = ['vehicles' => 0, 'captures' => 0, 'alerts' => 0];
-    }
-
-    return view('welcome', compact('stats'));
+    return view('welcome');
 })->name('home');
 
 Route::get('/register', function () {

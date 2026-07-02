@@ -3,7 +3,7 @@
 use App\Services\OcrService;
 
 beforeEach(function () {
-    $this->service = new OcrService(fallback: true);
+    $this->service = new OcrService(endpoint: 'https://example.com/test');
 });
 
 it('normalizes plate numbers to uppercase', function () {
@@ -17,12 +17,4 @@ it('normalizes plate numbers to uppercase', function () {
 it('handles empty or null input', function () {
     expect($this->service->normalizePlateNumber(''))->toBeNull()
         ->and($this->service->normalizePlateNumber('   '))->toBeNull();
-});
-
-it('estimates confidence based on alphanumeric ratio', function () {
-    $reflection = new ReflectionMethod($this->service, 'estimateConfidence');
-
-    expect($reflection->invoke($this->service, 'ABC123'))->toBe(99.99)
-        ->and($reflection->invoke($this->service, ''))->toBe(0.0)
-        ->and($reflection->invoke($this->service, '---'))->toBe(0.0);
 });

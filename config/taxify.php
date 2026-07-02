@@ -12,13 +12,10 @@ return [
     */
 
     'ocr' => [
-        'driver' => env('OCR_DRIVER', 'tesseract'),
-        'tesseract' => [
-            'binary' => env('TESSERACT_BINARY', 'tesseract'),
-            'lang' => env('TESSERACT_LANG', 'eng'),
-            'psm' => env('TESSERACT_PSM', 7),
+        'driver' => env('OCR_DRIVER', 'roboflow'),
+        'roboflow' => [
+            'endpoint' => env('ROBOFLOW_ENDPOINT', 'https://serverless.roboflow.com/hycons-workspace/workflows/custom-workflow'),
         ],
-        'fallback' => env('OCR_FALLBACK', true),
     ],
 
 ];
