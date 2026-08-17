@@ -14,7 +14,7 @@ class MatchPlateAction
 
         $capture->update(['is_matched' => $vehicle !== null]);
 
-        if ($vehicle === null) {
+        if ($vehicle === null && $capture->plate_number !== null) {
             PlateAlert::create([
                 'plate_capture_id' => $capture->id,
                 'status' => 'alert',

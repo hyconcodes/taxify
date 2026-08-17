@@ -8,6 +8,7 @@ beforeEach(function () {
 
 it('normalizes plate numbers to uppercase', function () {
     expect($this->service->normalizePlateNumber('abc-1234'))->toBe('ABC1234')
+        ->and($this->service->normalizePlateNumber('M EV332E'))->toBe('MEV332E')
         ->and($this->service->normalizePlateNumber('xyz  789'))->toBe('XYZ789')
         ->and($this->service->normalizePlateNumber('abc.123'))->toBe('ABC123')
         ->and($this->service->normalizePlateNumber(''))->toBeNull()

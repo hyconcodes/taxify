@@ -47,3 +47,17 @@ it('creates an alert when no vehicle matches', function () {
     expect($alert->status)->toBe('alert')
         ->and($alert->plate_capture_id)->toBe($capture->id);
 });
+
+it('does not create an alert when no plate was read', function () {
+    $capture = PlateCapture::factory()->create([
+        'plate_number' => null,
+        'is_matched' => false,
+        'captured_by' => User::factory(),
+    ]);
+
+    $action = app(MatchPlateAction::class);
+    $result = $action->execute($capture);
+
+    expect($result->is_matched)->toBeFalse();
+    expect(PlateAlert::count())->toBe(0);
+});

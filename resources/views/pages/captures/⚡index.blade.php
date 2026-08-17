@@ -20,6 +20,8 @@ new #[Title('Plate Captures')] class extends Component {
 
     public bool $showDetail = false;
 
+    public ?array $result = null;
+
     #[Computed]
     public function captures()
     {
@@ -43,9 +45,19 @@ new #[Title('Plate Captures')] class extends Component {
 
         $result = OcrService::fromConfig()->recognize($this->image);
 
+        $this->image = null;
+        $this->result = null;
+
+        if ($result['plate_number'] === null) {
+            Flux::toast(variant: 'warning', text: $result['message'] ?? __('No license plate could be recognized. Please upload a clear photo containing a visible car.'));
+
+            return;
+        }
+
         $capture = PlateCapture::create([
             'plate_number' => $result['plate_number'],
             'image_path' => $result['image_path'],
+            'annotated_image_path' => $result['annotated_image_path'],
             'confidence' => $result['confidence'],
             'captured_by' => auth()->id(),
             'captured_at' => now(),
@@ -53,7 +65,13 @@ new #[Title('Plate Captures')] class extends Component {
 
         app(MatchPlateAction::class)->execute($capture);
 
-        $this->image = null;
+        $this->result = [
+            'plate_number' => $capture->plate_number,
+            'confidence' => $capture->confidence,
+            'annotated_image_path' => $capture->annotated_image_path,
+            'image_path' => $capture->image_path,
+            'is_matched' => $capture->is_matched,
+        ];
 
         Flux::toast(variant: $capture->is_matched ? 'success' : 'warning', text: $capture->is_matched
             ? __('Plate recognized and matched successfully.')
@@ -120,6 +138,7 @@ new #[Title('Plate Captures')] class extends Component {
                             (uploaded, total) => { this.uploadProgress = Math.round((uploaded / total) * 100); },
                             () => { this.uploading = false; },
                         );
+                        $wire.set('result', null);
                         const reader = new FileReader();
                         reader.onload = (e) => { this.preview = e.target.result; };
                         reader.readAsDataURL(file);
@@ -274,6 +293,32 @@ new #[Title('Plate Captures')] class extends Component {
                 <flux:error>{{ $message }}</flux:error>
             @enderror
 
+            @if ($result)
+                <div class="space-y-3">
+                    <flux:heading size="md">{{ __('Recognition Result') }}</flux:heading>
+
+                    <div class="overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
+                        @if ($result['annotated_image_path'] || ($result['image_path'] && $result['image_path'] !== 'manual-entry'))
+                            <img
+                                src="{{ asset('storage/' . ($result['annotated_image_path'] ?? $result['image_path'])) }}"
+                                alt="{{ __('Annotated plate image') }}"
+                                class="w-full rounded-t-xl border-b border-neutral-200 object-contain dark:border-neutral-700"
+                            >
+                        @endif
+
+                        <div class="flex items-center justify-between gap-3 px-4 py-3">
+                            <div class="min-w-0">
+                                <p class="font-mono text-base font-bold">{{ $result['plate_number'] }}</p>
+                                <p class="text-xs text-neutral-500">{{ __('Confidence') }}: {{ $result['confidence'] }}%</p>
+                            </div>
+                            <flux:badge :color="$result['is_matched'] ? 'green' : 'red'" size="sm" inset="top bottom">
+                                {{ $result['is_matched'] ? __('Matched') : __('Unmatched') }}
+                            </flux:badge>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <div class="flex gap-3" x-cloak>
                 <flux:button variant="primary" wire:click="capture" wire:loading.attr="disabled" wire:target="capture" class="relative">
                     <span wire:loading.remove wire:target="capture">{{ __('Capture & Recognize') }}</span>
@@ -372,6 +417,14 @@ new #[Title('Plate Captures')] class extends Component {
                     </flux:badge>
                 </div>
 
+                @if ($selectedCapture->annotated_image_path || ($selectedCapture->image_path && $selectedCapture->image_path !== 'manual-entry'))
+                    <img
+                        src="{{ asset('storage/' . ($selectedCapture->annotated_image_path ?? $selectedCapture->image_path)) }}"
+                        alt="{{ __('Captured plate image') }}"
+                        class="w-full rounded-lg border border-neutral-200 object-contain dark:border-neutral-700"
+                    >
+                @endif
+
                 <div class="rounded-lg bg-neutral-50 p-4 dark:bg-neutral-800/50">
                     <div class="grid grid-cols-2 gap-3 text-sm">
                         <div>
@@ -467,7 +520,7 @@ new #[Title('Plate Captures')] class extends Component {
                     <flux:modal.close>
                         <flux:button variant="ghost">{{ __('Close') }}</flux:button>
                     </flux:modal.close>
-                    <flux:button variant="primary" wire:click="$set('image', null)" x-on:click="$dispatch('close-modal', 'showDetail'); setTimeout(() => document.getElementById('ocr-capture-card')?.scrollIntoView({ behavior: 'smooth' }), 200)">
+                    <flux:button variant="primary" wire:click="$set('image', null); $set('result', null)" x-on:click="$dispatch('close-modal', 'showDetail'); setTimeout(() => document.getElementById('ocr-capture-card')?.scrollIntoView({ behavior: 'smooth' }), 200)">
                         {{ __('New Capture') }}
                     </flux:button>
                 </div>

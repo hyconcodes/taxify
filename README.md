@@ -22,7 +22,7 @@ flowchart TB
     end
 
     subgraph Processing["Processing"]
-        OS["OcrService<br/><i>Send to Roboflow,<br/>parse response,<br/>normalize plate text</i>"]
+        OS["OcrService<br/><i>Send to Roboflow,<br/>parse success/car_found/<br/>plate_found/license_plate_number,<br/>save annotated image,<br/>normalize plate text</i>"]
         MP["MatchPlateAction<br/><i>Query vehicles table,<br/>mark matched or<br/>generate alert</i>"]
     end
 
@@ -117,6 +117,7 @@ erDiagram
         bigint id PK
         string plate_number "nullable, indexed"
         string image_path "storage path"
+        string annotated_image_path "nullable, storage path"
         decimal confidence "5,2, nullable"
         boolean is_matched "default: false"
         bigint captured_by FK "nullable"
@@ -166,9 +167,10 @@ flowchart LR
     D1 --> D2[Base64 encode]
     D2 --> D3[POST to Roboflow]
     D3 --> D4{Success?}
-    D4 -->|Yes| D5[Parse outputs[0]<br/>.license_plate_number]
+    D4 -->|Yes| D5[Parse success/message<br/>car_found/plate_found<br/>license_plate_number]
     D4 -->|No| D6[Log error<br/>Return null]
-    D5 --> D7[Normalize text<br/>Remove non-alphanum<br/>UPPERCASE]
+    D5 --> D5a[Save annotated output_image]
+    D5a --> D7[Normalize text<br/>Remove non-alphanum<br/>UPPERCASE]
     D6 --> E[Save PlateCapture<br/>plate_number=null<br/>confidence=0]
     D7 --> E
 
@@ -180,7 +182,9 @@ flowchart LR
     H --> I{Found?}
     I -->|Yes| J[Update is_matched=true]
     I -->|No| K[Update is_matched=false]
-    K --> L[Create PlateAlert<br/>status=alert<br/>notes=no match]
+    K --> K1{Plate read?}
+    K1 -->|Yes| L[Create PlateAlert<br/>status=alert<br/>notes=no match]
+    K1 -->|No| M([End])
 
     J --> M([End])
     L --> M
@@ -203,17 +207,40 @@ Content-Type: application/json
 }
 
 Response 200:
-{
-    "outputs": [
-        {
-            "license_plate_number": "ABC123",
-            ...
-        }
-    ]
-}
+[
+    {
+        "success": true,
+        "message": "Car and license plate detected successfully.",
+        "car_found": true,
+        "plate_found": true,
+        "license_plate_number": "M EV332E",
+        "output_image": {
+            "type": "base64",
+            "value": "<base64-encoded-annotated-image>"
+        },
+        "car_detection": { "predictions": [...] },
+        "plate_detection": { "predictions": [...] }
+    }
+]
 ```
 
-On failure, OcrService logs the error and returns `[plate_number: null, confidence: 0]` without throwing.
+The response is an array of workflow outputs; `OcrService` reads the first element. The annotated `output_image` contains bounding boxes: a red box labeled `car` and a yellow box labeled with the OCR result.
+
+When no car is detected, the output instead reports:
+
+```
+[
+    {
+        "success": true,
+        "message": "No car was detected in the image. Please upload a clear photo containing a visible car.",
+        "car_found": false,
+        "plate_found": false,
+        "license_plate_number": null
+    }
+]
+```
+
+On failure, OcrService logs the error and returns a result with `plate_number: null, confidence: 0` without throwing.
 
 ## Key Flows
 
@@ -226,14 +253,15 @@ On failure, OcrService logs the error and returns `[plate_number: null, confiden
 5. "Capture & Recognize" button sends to `capture()` method
 6. Processing overlay + button spinner shown
 7. `OcrService` sends base64 image to Roboflow serverless workflow
-8. Response parsed: `outputs[0].license_plate_number`
-9. Plate text normalized (stripped non-alphanumeric, uppercased)
+8. Response parsed: `success`, `message`, `car_found`, `plate_found`, `license_plate_number`
+9. Annotated `output_image` saved alongside the original; plate text normalized (stripped non-alphanumeric, uppercased)
 10. `PlateCapture` record saved with plate text, confidence, timestamp
 11. `MatchPlateAction` checks `vehicles` table for matching plate
 12. On match → `is_matched = true`
-13. On no match → `is_matched = false` + `PlateAlert` created
-14. Toast notification shown with result
-15. Click row in capture history → modal with vehicle & owner details
+13. On no match → `is_matched = false`; if a plate was read, a `PlateAlert` is created
+14. No car / no plate recognized → toast shows the API `message`, nothing is persisted
+15. Toast notification shown with result
+16. Click row in capture history → modal with annotated image, vehicle & owner details
 
 ### Manual Entry Flow
 
@@ -309,9 +337,11 @@ Set your Roboflow API key and workflow endpoint in `.env`:
 ```env
 ROBOFLOW_API_KEY=your_api_key_here
 ROBOFLOW_ENDPOINT=https://serverless.roboflow.com/your-workspace/workflows/your-workflow
+OCR_TIMEOUT=120
+OCR_CONNECT_TIMEOUT=10
 ```
 
-The default endpoint is configured in `config/taxify.php`. The API key is read from `config/services.php` via `ROBOFLOW_API_KEY`.
+The default endpoint is configured in `config/taxify.php`. The API key is read from `config/services.php` via `ROBOFLOW_API_KEY`. `OCR_TIMEOUT` (default `120`s) and `OCR_CONNECT_TIMEOUT` (default `10`s) control the request timeouts, since the serverless workflow can take over a minute on a cold start.
 
 ### Run Migrations & Seed
 
@@ -350,11 +380,12 @@ composer run dev
 Handles communication with the Roboflow serverless workflow API:
 
 1. Stores uploaded image to `public/plate-captures/`
-2. Encodes image as base64 and sends via HTTP POST
-3. Parses response for `outputs[0].license_plate_number`
-4. Normalizes plate text (removes non-alphanumeric, uppercases)
-5. Logs all requests, responses, and errors to `storage/logs/laravel.log`
-6. On failure, returns `[plate_number: null, confidence: 0]` gracefully
+2. Encodes image as base64 and sends via HTTP POST with a configurable timeout (`OCR_TIMEOUT`, default 120s) and connect timeout (`OCR_CONNECT_TIMEOUT`, default 10s)
+3. Parses response for `success`, `message`, `car_found`, `plate_found`, and `license_plate_number`
+4. Saves the annotated `output_image` to `public/plate-captures/` as `<name>-annotated.png`
+5. Normalizes plate text (removes non-alphanumeric, uppercases)
+6. Logs all requests, responses, and errors to `storage/logs/laravel.log`
+7. On failure, returns a result with `plate_number: null, confidence: 0` gracefully
 
 ### MatchPlateAction (`app/Actions/Plate/MatchPlateAction.php`)
 
@@ -368,6 +399,7 @@ Automatic plate matching logic:
 ### PlateCapture Detail Modal
 
 Click any capture history row to open a detail modal showing:
+- **Image:** Annotated capture image (or the original upload when no annotation exists)
 - **Matched:** Plate info + vehicle details (make, model, year, color, type) + owner info (name, phone, email, address, national ID)
 - **Unmatched:** Warning card indicating no registered vehicle was found and an alert was generated
 
@@ -401,10 +433,11 @@ php artisan test --compact
 ```
 
 Tests cover:
-- Roboflow API success / empty / failure responses (mocked HTTP)
+- Roboflow API success / no-car / plate-not-recognized / failure responses (mocked HTTP)
+- Annotated output image persistence
 - Plate number normalization
 - OCR service error handling and logging
-- Plate matching logic (matched vs unmatched)
+- Plate matching logic (matched vs unmatched vs no-plate-read)
 - Validation and duplicate plate detection
 - Config instantiation
 
@@ -426,7 +459,7 @@ Key config files:
 
 | File | Purpose |
 |------|---------|
-| `config/taxify.php` | OCR driver and Roboflow endpoint |
+| `config/taxify.php` | OCR driver, Roboflow endpoint, request timeouts |
 | `config/services.php` | `roboflow_key` from `ROBOFLOW_API_KEY` env |
 | `config/fortify.php` | Fortify auth settings (registration disabled) |
 | `.env` | Database, Roboflow, and app settings |

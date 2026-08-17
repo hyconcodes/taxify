@@ -14,6 +14,7 @@ class PlateCapture extends Model
     protected $fillable = [
         'plate_number',
         'image_path',
+        'annotated_image_path',
         'confidence',
         'is_matched',
         'captured_by',
