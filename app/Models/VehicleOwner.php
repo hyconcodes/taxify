@@ -15,6 +15,8 @@ class VehicleOwner extends Model
         'phone',
         'email',
         'address',
+        'state_of_origin',
+        'driver_license_number',
         'national_id',
     ];
 

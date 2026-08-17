@@ -18,14 +18,19 @@ it('can register a vehicle with owner', function () {
 
     Livewire::test('pages::vehicles.create')
         ->set('plate_number', 'ABC-1234')
+        ->set('vin_number', 'MALBB51CMVM412345')
         ->set('make', 'Toyota')
         ->set('model', 'Vios')
         ->set('year', '2020')
+        ->set('registration_date', '2020-05-15')
         ->set('color', 'White')
         ->set('type', 'Sedan')
+        ->set('insurance_status', 'valid')
         ->set('owner_name', 'John Doe')
         ->set('owner_phone', '09171234567')
         ->set('owner_email', 'john@example.com')
+        ->set('owner_state_of_origin', 'Lagos')
+        ->set('owner_driver_license_number', 'JDOE12345678')
         ->call('save')
         ->assertRedirect(route('vehicles.index'));
 
@@ -34,7 +39,24 @@ it('can register a vehicle with owner', function () {
 
     $vehicle = Vehicle::first();
     expect($vehicle->plate_number)->toBe('ABC-1234')
-        ->and($vehicle->owner->name)->toBe('John Doe');
+        ->and($vehicle->vin_number)->toBe('MALBB51CMVM412345')
+        ->and($vehicle->registration_date->format('Y-m-d'))->toBe('2020-05-15')
+        ->and($vehicle->insurance_status->value)->toBe('valid')
+        ->and($vehicle->owner->name)->toBe('John Doe')
+        ->and($vehicle->owner->state_of_origin)->toBe('Lagos')
+        ->and($vehicle->owner->driver_license_number)->toBe('JDOE12345678');
+});
+
+it('validates the insurance status against the enum', function () {
+    Livewire::test('pages::vehicles.create')
+        ->set('plate_number', 'ABC-1234')
+        ->set('make', 'Toyota')
+        ->set('model', 'Vios')
+        ->set('owner_name', 'Jane Doe')
+        ->set('owner_phone', '09171234567')
+        ->set('insurance_status', 'not-a-status')
+        ->call('save')
+        ->assertHasErrors('insurance_status');
 });
 
 it('validates required fields', function () {

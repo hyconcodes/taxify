@@ -22,6 +22,8 @@ class VehicleOwnerFactory extends Factory
             'phone' => fake()->phoneNumber(),
             'email' => fake()->unique()->safeEmail(),
             'address' => fake()->address(),
+            'state_of_origin' => fake()->randomElement(['Lagos', 'Ogun', 'Oyo', 'Kano', 'Abuja', 'Kaduna', 'Enugu']),
+            'driver_license_number' => fake()->unique()->regexify('[A-Z0-9]{12}'),
             'national_id' => fake()->unique()->numerify('##########'),
         ];
     }

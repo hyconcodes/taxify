@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\VehicleInsuranceStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,13 +14,24 @@ class Vehicle extends Model
 
     protected $fillable = [
         'plate_number',
+        'vin_number',
         'make',
         'model',
         'year',
+        'registration_date',
         'color',
         'type',
+        'insurance_status',
         'owner_id',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'registration_date' => 'date',
+            'insurance_status' => VehicleInsuranceStatus::class,
+        ];
+    }
 
     public function owner(): BelongsTo
     {
