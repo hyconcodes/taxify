@@ -66,6 +66,7 @@ new #[Title('Plate Captures')] class extends Component {
         app(MatchPlateAction::class)->execute($capture);
 
         $this->result = [
+            'id' => $capture->id,
             'plate_number' => $capture->plate_number,
             'confidence' => $capture->confidence,
             'annotated_image_path' => $capture->annotated_image_path,
@@ -300,7 +301,7 @@ new #[Title('Plate Captures')] class extends Component {
                     <div class="overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
                         @if ($result['annotated_image_path'] || ($result['image_path'] && $result['image_path'] !== 'manual-entry'))
                             <img
-                                src="{{ asset('storage/' . ($result['annotated_image_path'] ?? $result['image_path'])) }}"
+                                src="{{ route('captures.image', ['capture' => $result['id']]) }}"
                                 alt="{{ __('Annotated plate image') }}"
                                 class="w-full rounded-t-xl border-b border-neutral-200 object-contain dark:border-neutral-700"
                             >
@@ -419,7 +420,7 @@ new #[Title('Plate Captures')] class extends Component {
 
                 @if ($selectedCapture->annotated_image_path || ($selectedCapture->image_path && $selectedCapture->image_path !== 'manual-entry'))
                     <img
-                        src="{{ asset('storage/' . ($selectedCapture->annotated_image_path ?? $selectedCapture->image_path)) }}"
+                        src="{{ route('captures.image', ['capture' => $selectedCapture->id]) }}"
                         alt="{{ __('Captured plate image') }}"
                         class="w-full rounded-lg border border-neutral-200 object-contain dark:border-neutral-700"
                     >

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\PlateCapture;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -74,4 +75,42 @@ it('does not show a result when no plate is recognized', function () {
     $component
         ->assertSet('result', null)
         ->assertDontSee('Recognition Result');
+});
+
+it('serves the capture image through the web route', function () {
+    Storage::fake('public');
+
+    $capture = PlateCapture::factory()->create([
+        'image_path' => 'plate-captures/original.jpg',
+    ]);
+
+    Storage::disk('public')->put($capture->image_path, 'fake-image-bytes');
+
+    $this->get(route('captures.image', $capture))
+        ->assertOk();
+});
+
+it('serves the annotated image when available', function () {
+    Storage::fake('public');
+
+    $capture = PlateCapture::factory()->create([
+        'image_path' => 'plate-captures/original.jpg',
+        'annotated_image_path' => 'plate-captures/original-annotated.jpg',
+    ]);
+
+    Storage::disk('public')->put($capture->annotated_image_path, 'fake-annotated-bytes');
+
+    $this->get(route('captures.image', $capture))
+        ->assertOk();
+});
+
+it('returns 404 for manual-entry captures', function () {
+    Storage::fake('public');
+
+    $capture = PlateCapture::factory()->create([
+        'image_path' => 'manual-entry',
+    ]);
+
+    $this->get(route('captures.image', $capture))
+        ->assertNotFound();
 });

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PlateImageController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -17,6 +18,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire('vehicles/create', 'pages::vehicles.create')->name('vehicles.create');
 
     Route::livewire('captures', 'pages::captures.index')->name('captures.index');
+
+    Route::get('captures/{capture}/image', PlateImageController::class)->name('captures.image');
 
     Route::livewire('alerts', 'pages::alerts.index')->name('alerts.index');
 
