@@ -18,7 +18,7 @@ $stats = cache()->remember('dashboard.stats', 60, function () {
     <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
         <div class="flex items-center justify-between">
             <flux:heading size="xl">{{ __('Taxify Dashboard') }}</flux:heading>
-            <span class="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-400 uppercase tracking-wider">
+            <span class="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-600 uppercase tracking-wider dark:text-amber-400">
                 {{ __('Law Enforcement System') }}
             </span>
         </div>
@@ -26,19 +26,19 @@ $stats = cache()->remember('dashboard.stats', 60, function () {
         <div class="grid auto-rows-min gap-4 md:grid-cols-3">
             <flux:card class="relative flex flex-col items-center justify-center overflow-hidden p-6">
                 <div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent"></div>
-                <flux:heading size="3xl" class="text-amber-400">{{ $stats['vehicles'] }}</flux:heading>
+                <flux:heading size="3xl" class="text-amber-600 dark:text-amber-400">{{ $stats['vehicles'] }}</flux:heading>
                 <flux:text class="mt-1">{{ __('Registered Vehicles') }}</flux:text>
             </flux:card>
 
             <flux:card class="relative flex flex-col items-center justify-center overflow-hidden p-6">
                 <div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent"></div>
-                <flux:heading size="3xl" class="text-amber-400">{{ $stats['captures'] }}</flux:heading>
+                <flux:heading size="3xl" class="text-amber-600 dark:text-amber-400">{{ $stats['captures'] }}</flux:heading>
                 <flux:text class="mt-1">{{ __('Plate Captures') }}</flux:text>
             </flux:card>
 
             <flux:card class="relative flex flex-col items-center justify-center overflow-hidden p-6">
                 <div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent"></div>
-                <flux:heading size="3xl" class="{{ $stats['alerts'] > 0 ? 'text-red-400' : 'text-amber-400' }}">
+                <flux:heading size="3xl" class="{{ $stats['alerts'] > 0 ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400' }}">
                     {{ $stats['alerts'] }}
                 </flux:heading>
                 <flux:text class="mt-1">{{ __('Active Alerts') }}</flux:text>
