@@ -185,20 +185,20 @@ new #[Title('Plate Captures')] class extends Component {
                         @drop.prevent="handleDrop"
                         @dragover.prevent="dragging = true"
                         @dragleave.prevent="dragging = false"
-                        :class="dragging ? 'border-amber-500 bg-amber-500/5' : 'border-neutral-600/50 dark:border-neutral-600/50'"
+                        :class="dragging ? 'border-amber-500 bg-amber-500/5' : 'border-neutral-300 dark:border-neutral-600/50'"
                         class="relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center transition"
                         @click="!uploading ? $refs.fileInput.click() : null"
                     >
                         <template x-if="!preview && !uploading">
                             <div class="flex flex-col items-center gap-3">
-                                <div class="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-700/50">
+                                <div class="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-700/50">
                                     <svg class="h-7 w-7 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                                     </svg>
                                 </div>
                                 <div>
-                                    <p class="text-sm font-medium text-neutral-300">
-                                        <span class="text-amber-400">{{ __('Click to upload') }}</span>
+                                    <p class="text-sm font-medium text-neutral-600 dark:text-neutral-300">
+                                        <span class="text-amber-600 dark:text-amber-400">{{ __('Click to upload') }}</span>
                                         {{ __('or drag and drop') }}
                                     </p>
                                     <p class="mt-1 text-xs text-neutral-500">{{ __('PNG, JPG up to 2MB') }}</p>
@@ -208,14 +208,14 @@ new #[Title('Plate Captures')] class extends Component {
 
                         <template x-if="uploading && !preview">
                             <div class="flex flex-col items-center gap-3">
-                                <div class="flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/20">
-                                    <svg class="h-7 w-7 animate-spin text-amber-400" fill="none" viewBox="0 0 24 24">
+                                <div class="flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-500/20">
+                                    <svg class="h-7 w-7 animate-spin text-amber-500 dark:text-amber-400" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                     </svg>
                                 </div>
                                 <div>
-                                    <p class="text-sm font-medium text-neutral-300">{{ __('Uploading image...') }}</p>
+                                    <p class="text-sm font-medium text-neutral-600 dark:text-neutral-300">{{ __('Uploading image...') }}</p>
                                     <p class="mt-1 text-xs text-neutral-500" x-text="uploadProgress + '%'"></p>
                                 </div>
                             </div>
@@ -228,7 +228,7 @@ new #[Title('Plate Captures')] class extends Component {
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                     </svg>
-                                    <span class="text-xs text-neutral-300">{{ __('Uploading...') }}</span>
+                                    <span class="text-xs text-neutral-600 dark:text-neutral-300">{{ __('Uploading...') }}</span>
                                 </div>
                             </div>
                         </template>
@@ -246,7 +246,7 @@ new #[Title('Plate Captures')] class extends Component {
 
                         <input type="file" x-ref="fileInput" @change="handleFileInput" accept="image/*" class="hidden" />
 
-                        <div x-show="uploading" class="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-neutral-700">
+                        <div x-show="uploading" class="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
                             <div class="h-full rounded-full bg-amber-500 transition-all duration-300" :style="'width: ' + uploadProgress + '%'"></div>
                         </div>
                     </div>
@@ -263,7 +263,7 @@ new #[Title('Plate Captures')] class extends Component {
                                 </svg>
                                 {{ __('Capture') }}
                             </button>
-                            <button @click="stopCamera()" type="button" class="rounded-lg bg-neutral-700 px-5 py-2.5 text-sm font-medium text-neutral-300 transition hover:bg-neutral-600">
+                            <button @click="stopCamera()" type="button" class="rounded-lg bg-neutral-200 px-5 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-300 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600">
                                 {{ __('Cancel') }}
                             </button>
                         </div>
@@ -271,7 +271,7 @@ new #[Title('Plate Captures')] class extends Component {
                 </template>
 
                 <div x-show="!preview && !cameraActive && !uploading" class="mt-3 flex justify-center" x-cloak>
-                    <button @click.stop="openCamera()" type="button" class="inline-flex items-center gap-2 rounded-lg border border-neutral-600/50 px-4 py-2 text-sm font-medium text-neutral-300 transition hover:bg-neutral-700/50">
+                    <button @click.stop="openCamera()" type="button" class="inline-flex items-center gap-2 rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 dark:border-neutral-600/50 dark:text-neutral-300 dark:hover:bg-neutral-700/50">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
                         </svg>
@@ -280,7 +280,7 @@ new #[Title('Plate Captures')] class extends Component {
                 </div>
 
                 <div x-show="preview && !cameraActive && !uploading" class="mt-3 flex gap-3" x-cloak>
-                    <button @click="openCamera()" type="button" class="inline-flex items-center gap-2 rounded-lg border border-neutral-600/50 px-4 py-2 text-sm font-medium text-neutral-300 transition hover:bg-neutral-700/50">
+                    <button @click="openCamera()" type="button" class="inline-flex items-center gap-2 rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 dark:border-neutral-600/50 dark:text-neutral-300 dark:hover:bg-neutral-700/50">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
                             <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" />
@@ -335,11 +335,11 @@ new #[Title('Plate Captures')] class extends Component {
 
             <div wire:loading wire:target="capture" class="absolute inset-0 z-20 flex items-center justify-center rounded-xl bg-neutral-900/70">
                 <div class="flex flex-col items-center gap-3">
-                    <svg class="h-10 w-10 animate-spin text-amber-400" fill="none" viewBox="0 0 24 24">
+                    <svg class="h-10 w-10 animate-spin text-amber-500 dark:text-amber-400" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    <span class="text-sm font-medium text-neutral-200">{{ __('Running OCR recognition...') }}</span>
+                    <span class="text-sm font-medium text-neutral-700 dark:text-neutral-200">{{ __('Running OCR recognition...') }}</span>
                 </div>
             </div>
         </flux:card>

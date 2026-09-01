@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-white dark:bg-primary-900">
-        <flux:sidebar sticky collapsible="mobile" class="border-e border-primary-600/20 bg-primary-950 dark:border-primary-600/30 dark:bg-primary-950">
+        <flux:sidebar sticky collapsible="mobile" class="border-e border-neutral-200 bg-white dark:border-primary-600/30 dark:bg-primary-950">
             <flux:sidebar.header class="border-b border-amber-500/10 pb-4">
                 <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
                 <flux:sidebar.collapse class="lg:hidden" />
